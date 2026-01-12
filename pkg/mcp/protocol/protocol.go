@@ -1,3 +1,17 @@
+// Package protocol provides JSON-RPC 2.0 protocol types and helpers for MCP servers.
+//
+// This package includes request/response structures, error types, and helper functions
+// for creating JSON-RPC messages. It provides a complete implementation of the
+// JSON-RPC 2.0 specification as used by the MCP protocol.
+//
+// Example:
+//
+//	req := protocol.JSONRPCRequest{
+//		JSONRPC: "2.0",
+//		ID:      "123",
+//		Method:  "tools/list",
+//	}
+//	resp := protocol.NewSuccessResponse("123", result)
 package protocol
 
 import (
