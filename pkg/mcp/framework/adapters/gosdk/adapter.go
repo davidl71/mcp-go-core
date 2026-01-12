@@ -59,8 +59,8 @@ func (a *GoSDKAdapter) RegisterTool(name, description string, schema types.ToolS
 	// ToolHandler: func(context.Context, *CallToolRequest) (*CallToolResult, error)
 	toolHandler := func(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		// Check context cancellation
-		if ctx.Err() != nil {
-			return nil, fmt.Errorf("context cancelled: %w", ctx.Err())
+		if err := ValidateContext(ctx); err != nil {
+			return nil, err
 		}
 
 		// Validate request
@@ -131,8 +131,8 @@ func (a *GoSDKAdapter) RegisterPrompt(name, description string, handler framewor
 	// The new API uses: func(context.Context, *GetPromptRequest) (*GetPromptResult, error)
 	promptHandler := func(ctx context.Context, req *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
 		// Check context cancellation
-		if ctx.Err() != nil {
-			return nil, fmt.Errorf("context cancelled: %w", ctx.Err())
+		if err := ValidateContext(ctx); err != nil {
+			return nil, err
 		}
 
 		// Validate request
@@ -189,8 +189,8 @@ func (a *GoSDKAdapter) RegisterResource(uri, name, description, mimeType string,
 	// The new API uses: func(context.Context, *ReadResourceRequest) (*ReadResourceResult, error)
 	resourceHandler := func(ctx context.Context, req *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
 		// Check context cancellation
-		if ctx.Err() != nil {
-			return nil, fmt.Errorf("context cancelled: %w", ctx.Err())
+		if err := ValidateContext(ctx); err != nil {
+			return nil, err
 		}
 
 		// Validate request
@@ -234,8 +234,8 @@ func (a *GoSDKAdapter) RegisterResource(uri, name, description, mimeType string,
 // Run starts the server with the given transport
 func (a *GoSDKAdapter) Run(ctx context.Context, transport framework.Transport) error {
 	// Check context cancellation
-	if ctx.Err() != nil {
-		return fmt.Errorf("context cancelled: %w", ctx.Err())
+	if err := ValidateContext(ctx); err != nil {
+		return err
 	}
 
 	// Validate server
