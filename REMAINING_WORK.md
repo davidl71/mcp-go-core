@@ -28,7 +28,7 @@
 
 ### Medium Priority
 
-#### 1. HTTP Transport Support
+#### 1. HTTP Transport Support (Non-SSE)
 **Status:** Todo  
 **Priority:** Medium  
 **Effort:** Medium  
@@ -63,20 +63,23 @@
 - More flexible than SSE
 
 #### 3. Performance Optimizations
-**Status:** Todo  
+**Status:** ✅ Complete  
 **Priority:** Medium  
 **Effort:** Medium  
 **Impact:** Low
 
-**Tasks:**
-- Profile critical paths
-- Optimize hot paths
-- Memory usage improvements
-- Benchmark before/after
+**Completed:**
+- ✅ Fast path for empty middleware chains
+- ✅ Pre-allocated slice capacity
+- ✅ Nil slice returns (better memory usage)
+- ✅ Optimized context validation
+- ✅ Performance documentation with best practices
+- ✅ Performance characteristics documentation
 
 **Benefits:**
 - Better performance
 - Lower memory footprint
+- Baseline optimizations applied
 
 #### 4. Benchmark Tests
 **Status:** Todo  
@@ -94,32 +97,35 @@
 - Document performance expectations
 
 #### 5. Create Migration Guide
-**Status:** Todo  
+**Status:** ✅ Complete  
 **Priority:** Medium  
 **Effort:** Low  
 **Impact:** High
 
-**Tasks:**
-- Step-by-step migration instructions
-- Code examples
-- Common pitfalls
-- Before/after comparisons
+**Completed:**
+- ✅ Step-by-step migration instructions
+- ✅ Code examples for exarp-go and devwisdom-go
+- ✅ Common pitfalls and solutions
+- ✅ Before/after comparisons
+- ✅ Breaking changes documentation
+- ✅ Verification checklist
+- ✅ Rollback plan
 
 **Benefits:**
 - Easier adoption
 - Reduced migration errors
 
 #### 6. Add Usage Examples
-**Status:** Todo  
+**Status:** ✅ Complete  
 **Priority:** Medium  
 **Effort:** Medium  
 **Impact:** High
 
-**Tasks:**
-- Example MCP server using the library
-- Example CLI tool using the library
-- Integration examples
-- Best practices
+**Completed:**
+- ✅ Basic server example (tools, prompts, resources, CLI/MCP dual mode)
+- ✅ Advanced server example (logging, middleware, adapter options)
+- ✅ Example README with usage instructions
+- ✅ Best practices demonstration
 
 **Benefits:**
 - Faster onboarding
