@@ -1,3 +1,19 @@
+// Package config provides configuration management for MCP servers.
+//
+// This package includes base configuration structures, environment variable loading,
+// and a builder pattern for programmatic configuration. The BaseConfig can be embedded
+// by projects to add their own configuration fields.
+//
+// Example:
+//
+//	// Load from environment
+//	cfg, err := config.LoadBaseConfig()
+//
+//	// Or use builder pattern
+//	cfg, err := config.NewConfigBuilder().
+//		WithName("my-server").
+//		WithVersion("1.0.0").
+//		Build()
 package config
 
 import (

@@ -1,3 +1,19 @@
+// Package security provides security utilities for MCP servers.
+//
+// This package includes path validation, project root detection, access control,
+// and rate limiting functionality. All security utilities are designed to be
+// framework-agnostic and reusable across different MCP server implementations.
+//
+// Example:
+//
+//	root, err := security.GetProjectRoot(".")
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	validPath, err := security.ValidatePath("subdir/file.txt", root)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
 package security
 
 import (

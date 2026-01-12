@@ -1,3 +1,17 @@
+// Package framework provides framework-agnostic abstractions for MCP servers.
+//
+// The framework package defines interfaces and adapters that allow MCP servers
+// to work with different underlying frameworks (go-sdk, mcp-go, etc.) without
+// changing application code.
+//
+// Example:
+//
+//	server, err := factory.NewServer(config.FrameworkGoSDK, "my-server", "1.0.0")
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	server.RegisterTool("my_tool", "Description", schema, handler)
+//	server.Run(ctx, transport)
 package framework
 
 import (

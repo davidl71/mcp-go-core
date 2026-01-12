@@ -1,3 +1,15 @@
+// Package factory provides factory functions for creating MCP servers.
+//
+// The factory package centralizes server creation logic and enables
+// configuration-driven server creation. It supports different framework types
+// and provides a consistent API for server instantiation.
+//
+// Example:
+//
+//	server, err := factory.NewServer(config.FrameworkGoSDK, "my-server", "1.0.0")
+//	// or
+//	cfg, _ := config.LoadBaseConfig()
+//	server, err := factory.NewServerFromConfig(cfg)
 package factory
 
 import (
