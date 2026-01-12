@@ -42,12 +42,17 @@ mcp-go-core/
 │   └── mcp/
 │       ├── framework/     # Framework abstraction
 │       ├── cli/           # CLI utilities
+│       ├── client/        # Client wrapper (optional)
 │       ├── config/        # Base configuration
 │       ├── security/      # Security utilities
 │       ├── logging/       # Structured logging
 │       ├── protocol/      # JSON-RPC types
 │       ├── platform/      # Platform detection
 │       └── types/         # Common types
+├── examples/
+│   ├── basic_server/      # Basic server example
+│   ├── advanced_server/   # Advanced server example
+│   └── client_example/    # Client wrapper example
 ├── scripts/
 │   └── dev-common.sh     # Shared development utilities
 ├── .github/
@@ -65,6 +70,18 @@ mcp-go-core/
 ✅ **v0.1.0 Released** - Core components extracted and published
 
 This library contains shared MCP infrastructure code extracted from `exarp-go` and `devwisdom-go` projects. All high-priority components have been extracted, tested, and refactored.
+
+## Client Wrapper (Optional)
+
+The library includes an optional client wrapper package (`pkg/mcp/client`) that wraps external MCP client libraries (e.g., `github.com/metoro-io/mcp-golang`) to provide:
+
+- Type integration with `mcp-go-core` types
+- Testing utilities for `mcp-go-core` servers
+- Consistent API using `mcp-go-core` types
+
+See [Client Wrapper Documentation](docs/CLIENT_WRAPPER_USAGE.md) for usage details.
+
+**Note:** The client wrapper requires `github.com/metoro-io/mcp-golang` as a dependency. To build without it, use: `go build -tags no_mcp_client`
 
 ## Contributing
 

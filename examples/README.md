@@ -68,9 +68,29 @@ To use an example server with Cursor, add to `.cursor/mcp.json`:
 }
 ```
 
+### 3. Client Example (`client_example/`)
+
+A client wrapper example demonstrating:
+- Client creation and initialization
+- Listing tools, resources, and prompts
+- Calling tools on a server
+- Testing server capabilities
+
+**Run:**
+```bash
+cd examples/client_example
+go run main.go /path/to/mcp/server
+
+# Or with options
+go run main.go --client-name my-client --timeout 5s /path/to/mcp/server
+```
+
+**Note:** This example requires the client wrapper package (see [Client Wrapper Documentation](../docs/CLIENT_WRAPPER_USAGE.md)).
+
 ## Next Steps
 
 1. Run the basic server example
 2. Try the advanced server example
-3. Modify examples to suit your needs
-4. Create your own MCP server based on the examples
+3. Try the client example (if client wrapper is enabled)
+4. Modify examples to suit your needs
+5. Create your own MCP server based on the examples
