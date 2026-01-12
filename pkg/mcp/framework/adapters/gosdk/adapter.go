@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/davidl71/mcp-go-core/pkg/mcp/framework"
+	"github.com/davidl71/mcp-go-core/pkg/mcp/logging"
 	"github.com/davidl71/mcp-go-core/pkg/mcp/types"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -16,6 +18,7 @@ type GoSDKAdapter struct {
 	name         string
 	toolHandlers map[string]framework.ToolHandler
 	toolInfo     map[string]types.ToolInfo
+	logger       *logging.Logger
 }
 
 // NewGoSDKAdapter creates a new Go SDK adapter
@@ -29,6 +32,7 @@ func NewGoSDKAdapter(name, version string, opts ...AdapterOption) *GoSDKAdapter 
 		name:         name,
 		toolHandlers: make(map[string]framework.ToolHandler),
 		toolInfo:     make(map[string]types.ToolInfo),
+		logger:       logging.NewLogger(), // Default logger
 	}
 
 	// Apply options
@@ -51,6 +55,8 @@ func (a *GoSDKAdapter) RegisterTool(name, description string, schema types.ToolS
 	if schema.Type != "object" {
 		return fmt.Errorf("tool schema type must be 'object', got %q", schema.Type)
 	}
+
+	a.logger.Debugf("Registering tool: %s", name)
 
 	// Convert framework ToolSchema to go-sdk InputSchema
 	// The schema must be a JSON object with type "object"
@@ -116,11 +122,14 @@ func (a *GoSDKAdapter) RegisterTool(name, description string, schema types.ToolS
 		Schema:      schema,
 	}
 
+	a.logger.Infof("Tool registered successfully: %s", name)
 	return nil
 }
 
 // RegisterPrompt registers a prompt with the server
 func (a *GoSDKAdapter) RegisterPrompt(name, description string, handler framework.PromptHandler) error {
+	a.logger.Debugf("Registering prompt: %s", name)
+
 	// Input validation
 	if err := ValidateRegistration(name, description, handler); err != nil {
 		return fmt.Errorf("prompt registration: %w", err)
@@ -169,11 +178,15 @@ func (a *GoSDKAdapter) RegisterPrompt(name, description string, handler framewor
 
 	// Use server.AddPrompt with the new API
 	a.server.AddPrompt(prompt, promptHandler)
+
+	a.logger.Infof("Prompt registered successfully: %s", name)
 	return nil
 }
 
 // RegisterResource registers a resource with the server
 func (a *GoSDKAdapter) RegisterResource(uri, name, description, mimeType string, handler framework.ResourceHandler) error {
+	a.logger.Debugf("Registering resource: %s", uri)
+
 	// Input validation
 	if err := ValidateResourceRegistration(uri, name, description, handler); err != nil {
 		return fmt.Errorf("resource registration: %w", err)
@@ -224,6 +237,8 @@ func (a *GoSDKAdapter) RegisterResource(uri, name, description, mimeType string,
 
 	// Use server.AddResource with the new API
 	a.server.AddResource(resource, resourceHandler)
+
+	a.logger.Infof("Resource registered successfully: %s", uri)
 	return nil
 }
 
