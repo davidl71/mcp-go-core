@@ -62,9 +62,9 @@ mcp-go-core/
 
 ## Status
 
-🚧 **In Development** - Initial project setup
+✅ **v0.1.0 Released** - Core components extracted and published
 
-This project is being initialized. Code extraction from `exarp-go` and `devwisdom-go` is in progress.
+This library contains shared MCP infrastructure code extracted from `exarp-go` and `devwisdom-go` projects. All high-priority components have been extracted, tested, and refactored.
 
 ## Contributing
 
