@@ -64,11 +64,8 @@ func (a *GoSDKAdapter) RegisterTool(name, description string, schema types.ToolS
 		}
 
 		// Validate request
-		if req == nil {
-			return nil, fmt.Errorf("call tool request cannot be nil")
-		}
-		if req.Params == nil {
-			return nil, fmt.Errorf("call tool request params cannot be nil")
+		if err := ValidateCallToolRequest(req); err != nil {
+			return nil, err
 		}
 
 		// Call framework handler with raw arguments
@@ -136,11 +133,8 @@ func (a *GoSDKAdapter) RegisterPrompt(name, description string, handler framewor
 		}
 
 		// Validate request
-		if req == nil {
-			return nil, fmt.Errorf("get prompt request cannot be nil")
-		}
-		if req.Params == nil {
-			return nil, fmt.Errorf("get prompt request params cannot be nil")
+		if err := ValidateGetPromptRequest(req); err != nil {
+			return nil, err
 		}
 
 		// Convert req.Params.Arguments (map[string]any) to map[string]interface{}
@@ -194,14 +188,8 @@ func (a *GoSDKAdapter) RegisterResource(uri, name, description, mimeType string,
 		}
 
 		// Validate request
-		if req == nil {
-			return nil, fmt.Errorf("read resource request cannot be nil")
-		}
-		if req.Params == nil {
-			return nil, fmt.Errorf("read resource request params cannot be nil")
-		}
-		if req.Params.URI == "" {
-			return nil, fmt.Errorf("resource URI cannot be empty")
+		if err := ValidateReadResourceRequest(req); err != nil {
+			return nil, err
 		}
 
 		// Call framework handler with URI from params

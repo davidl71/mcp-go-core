@@ -2,6 +2,8 @@ package gosdk
 
 import (
 	"testing"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func TestValidateRegistration(t *testing.T) {
