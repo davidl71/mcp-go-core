@@ -243,13 +243,41 @@ func (a *GoSDKAdapter) Run(ctx context.Context, transport framework.Transport) e
 		return fmt.Errorf("server is nil")
 	}
 
-	// Use stdio transport for go-sdk
-	// Note: transport parameter is ignored for now as go-sdk always uses StdioTransport
-	// Future: implement transport type checking and conversion
-	stdioTransport := &mcp.StdioTransport{}
-	if err := a.server.Run(ctx, stdioTransport); err != nil {
+	// Use provided transport or default to stdio
+	if transport == nil {
+		transport = &framework.StdioTransport{}
+	}
+
+	// Convert framework transport to go-sdk transport based on type
+	var mcpTransport mcp.Transport
+	switch transport.Type() {
+	case "stdio":
+		mcpTransport = &mcp.StdioTransport{}
+	case "sse":
+		// SSE transport would be implemented here when needed
+		// For now, fall back to stdio
+		return fmt.Errorf("SSE transport not yet implemented for go-sdk adapter")
+	default:
+		return fmt.Errorf("unsupported transport type: %s", transport.Type())
+	}
+
+	// Start the transport
+	if err := transport.Start(ctx); err != nil {
+		return fmt.Errorf("failed to start transport: %w", err)
+	}
+
+	// Run the server with the transport
+	if err := a.server.Run(ctx, mcpTransport); err != nil {
+		// Try to stop transport on error
+		_ = transport.Stop(ctx)
 		return fmt.Errorf("server run failed: %w", err)
 	}
+
+	// Stop the transport when done
+	if err := transport.Stop(ctx); err != nil {
+		return fmt.Errorf("failed to stop transport: %w", err)
+	}
+
 	return nil
 }
 

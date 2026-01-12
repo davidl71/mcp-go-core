@@ -44,8 +44,5 @@ type PromptHandler func(ctx context.Context, args map[string]interface{}) (strin
 // ResourceHandler handles resource requests
 type ResourceHandler func(ctx context.Context, uri string) ([]byte, string, error)
 
-// Transport abstracts transport mechanism
-type Transport interface {
-	// Transport-specific methods
-	// Each framework will implement this differently
-}
+// Transport is defined in transport.go
+// Imported here for backward compatibility
