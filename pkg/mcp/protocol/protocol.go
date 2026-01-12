@@ -20,7 +20,7 @@ type JSONRPCResponse struct {
 	JSONRPC string        `json:"jsonrpc"`
 	ID      interface{}   `json:"id"` // No omitempty - null is valid for parse errors
 	Result  interface{}   `json:"result,omitempty"`
-	Error   *JSONRPCError  `json:"error,omitempty"`
+	Error   *JSONRPCError `json:"error,omitempty"`
 }
 
 // JSONRPCError represents a JSON-RPC 2.0 error
