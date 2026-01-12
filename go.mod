@@ -4,7 +4,10 @@ go 1.24.0
 
 toolchain go1.24.11
 
-require github.com/modelcontextprotocol/go-sdk v1.2.0
+require (
+	github.com/modelcontextprotocol/go-sdk v1.2.0
+	golang.org/x/term v0.38.0
+)
 
 require (
 	github.com/google/jsonschema-go v0.3.0 // indirect
