@@ -34,14 +34,8 @@ func NewGoSDKAdapter(name, version string) *GoSDKAdapter {
 // RegisterTool registers a tool with the server using the new v1.2.0 API
 func (a *GoSDKAdapter) RegisterTool(name, description string, schema types.ToolSchema, handler framework.ToolHandler) error {
 	// Input validation
-	if name == "" {
-		return fmt.Errorf("tool name cannot be empty")
-	}
-	if description == "" {
-		return fmt.Errorf("tool description cannot be empty")
-	}
-	if handler == nil {
-		return fmt.Errorf("tool handler cannot be nil")
+	if err := ValidateRegistration(name, description, handler); err != nil {
+		return fmt.Errorf("tool registration: %w", err)
 	}
 	if schema.Type == "" {
 		schema.Type = "object" // Default to object type
@@ -138,14 +132,8 @@ func (a *GoSDKAdapter) RegisterTool(name, description string, schema types.ToolS
 // RegisterPrompt registers a prompt with the server
 func (a *GoSDKAdapter) RegisterPrompt(name, description string, handler framework.PromptHandler) error {
 	// Input validation
-	if name == "" {
-		return fmt.Errorf("prompt name cannot be empty")
-	}
-	if description == "" {
-		return fmt.Errorf("prompt description cannot be empty")
-	}
-	if handler == nil {
-		return fmt.Errorf("prompt handler cannot be nil")
+	if err := ValidateRegistration(name, description, handler); err != nil {
+		return fmt.Errorf("prompt registration: %w", err)
 	}
 
 	// Create prompt definition
@@ -200,17 +188,8 @@ func (a *GoSDKAdapter) RegisterPrompt(name, description string, handler framewor
 // RegisterResource registers a resource with the server
 func (a *GoSDKAdapter) RegisterResource(uri, name, description, mimeType string, handler framework.ResourceHandler) error {
 	// Input validation
-	if uri == "" {
-		return fmt.Errorf("resource URI cannot be empty")
-	}
-	if name == "" {
-		return fmt.Errorf("resource name cannot be empty")
-	}
-	if description == "" {
-		return fmt.Errorf("resource description cannot be empty")
-	}
-	if handler == nil {
-		return fmt.Errorf("resource handler cannot be nil")
+	if err := ValidateResourceRegistration(uri, name, description, handler); err != nil {
+		return fmt.Errorf("resource registration: %w", err)
 	}
 
 	// Create resource definition
