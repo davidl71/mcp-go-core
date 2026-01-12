@@ -19,8 +19,9 @@ type GoSDKAdapter struct {
 }
 
 // NewGoSDKAdapter creates a new Go SDK adapter
-func NewGoSDKAdapter(name, version string) *GoSDKAdapter {
-	return &GoSDKAdapter{
+// Options can be provided to configure the adapter (e.g., WithLogger, WithMiddleware)
+func NewGoSDKAdapter(name, version string, opts ...AdapterOption) *GoSDKAdapter {
+	adapter := &GoSDKAdapter{
 		server: mcp.NewServer(&mcp.Implementation{
 			Name:    name,
 			Version: version,
@@ -29,6 +30,13 @@ func NewGoSDKAdapter(name, version string) *GoSDKAdapter {
 		toolHandlers: make(map[string]framework.ToolHandler),
 		toolInfo:     make(map[string]types.ToolInfo),
 	}
+
+	// Apply options
+	for _, opt := range opts {
+		opt(adapter)
+	}
+
+	return adapter
 }
 
 // RegisterTool registers a tool with the server using the new v1.2.0 API
