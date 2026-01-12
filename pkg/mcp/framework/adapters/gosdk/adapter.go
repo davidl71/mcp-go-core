@@ -46,13 +46,7 @@ func (a *GoSDKAdapter) RegisterTool(name, description string, schema types.ToolS
 
 	// Convert framework ToolSchema to go-sdk InputSchema
 	// The schema must be a JSON object with type "object"
-	inputSchemaMap := map[string]interface{}{
-		"type":       schema.Type,
-		"properties": schema.Properties,
-	}
-	if len(schema.Required) > 0 {
-		inputSchemaMap["required"] = schema.Required
-	}
+	inputSchemaMap := ToolSchemaToMCP(schema)
 
 	// Create tool definition with input schema
 	tool := &mcp.Tool{
@@ -99,16 +93,7 @@ func (a *GoSDKAdapter) RegisterTool(name, description string, schema types.ToolS
 		}
 
 		// Convert framework TextContent to go-sdk Content
-		contents := make([]mcp.Content, len(result))
-		for i, content := range result {
-			// TextContent is a struct, not a pointer, so we check for empty text
-			if content.Text == "" {
-				// Empty text is valid, but we'll include it anyway
-			}
-			contents[i] = &mcp.TextContent{
-				Text: content.Text,
-			}
-		}
+		contents := TextContentToMCP(result)
 
 		return &mcp.CallToolResult{
 			Content: contents,
