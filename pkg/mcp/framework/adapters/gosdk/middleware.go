@@ -78,7 +78,11 @@ func (mc *MiddlewareChain) AddResourceMiddleware(mw func(ResourceHandlerFunc) Re
 }
 
 // WrapToolHandler wraps a tool handler with all registered middleware
+// Optimized: skip wrapping if no middleware registered
 func (mc *MiddlewareChain) WrapToolHandler(handler ToolHandlerFunc) ToolHandlerFunc {
+	if len(mc.toolMiddlewares) == 0 {
+		return handler // Fast path: no middleware
+	}
 	// Apply middleware in reverse order (last registered wraps first)
 	wrapped := handler
 	for i := len(mc.toolMiddlewares) - 1; i >= 0; i-- {
@@ -88,7 +92,11 @@ func (mc *MiddlewareChain) WrapToolHandler(handler ToolHandlerFunc) ToolHandlerF
 }
 
 // WrapPromptHandler wraps a prompt handler with all registered middleware
+// Optimized: skip wrapping if no middleware registered
 func (mc *MiddlewareChain) WrapPromptHandler(handler PromptHandlerFunc) PromptHandlerFunc {
+	if len(mc.promptMiddlewares) == 0 {
+		return handler // Fast path: no middleware
+	}
 	// Apply middleware in reverse order (last registered wraps first)
 	wrapped := handler
 	for i := len(mc.promptMiddlewares) - 1; i >= 0; i-- {
@@ -98,7 +106,11 @@ func (mc *MiddlewareChain) WrapPromptHandler(handler PromptHandlerFunc) PromptHa
 }
 
 // WrapResourceHandler wraps a resource handler with all registered middleware
+// Optimized: skip wrapping if no middleware registered
 func (mc *MiddlewareChain) WrapResourceHandler(handler ResourceHandlerFunc) ResourceHandlerFunc {
+	if len(mc.resourceMiddlewares) == 0 {
+		return handler // Fast path: no middleware
+	}
 	// Apply middleware in reverse order (last registered wraps first)
 	wrapped := handler
 	for i := len(mc.resourceMiddlewares) - 1; i >= 0; i-- {

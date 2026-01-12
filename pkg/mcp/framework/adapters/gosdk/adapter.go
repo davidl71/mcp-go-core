@@ -16,8 +16,8 @@ import (
 type GoSDKAdapter struct {
 	server       *mcp.Server
 	name         string
-	toolHandlers map[string]framework.ToolHandler
-	toolInfo     map[string]types.ToolInfo
+	toolHandlers map[string]framework.ToolHandler // Pre-allocated map for O(1) lookups
+	toolInfo     map[string]types.ToolInfo        // Pre-allocated map for O(1) lookups
 	logger       *logging.Logger
 	middleware   *MiddlewareChain
 }
@@ -321,7 +321,9 @@ func (a *GoSDKAdapter) GetName() string {
 }
 
 // CallTool executes a tool directly (for CLI mode)
+// Optimized for CLI usage with direct map lookup (O(1))
 func (a *GoSDKAdapter) CallTool(ctx context.Context, name string, args json.RawMessage) ([]types.TextContent, error) {
+	// Fast path: direct map lookup (O(1))
 	handler, exists := a.toolHandlers[name]
 	if !exists {
 		return nil, fmt.Errorf("tool %q not found", name)
@@ -330,7 +332,11 @@ func (a *GoSDKAdapter) CallTool(ctx context.Context, name string, args json.RawM
 }
 
 // ListTools returns all registered tools
+// Optimized with pre-allocated slice capacity
 func (a *GoSDKAdapter) ListTools() []types.ToolInfo {
+	if len(a.toolInfo) == 0 {
+		return nil // Return nil slice for empty (better than empty slice)
+	}
 	tools := make([]types.ToolInfo, 0, len(a.toolInfo))
 	for _, info := range a.toolInfo {
 		tools = append(tools, info)
