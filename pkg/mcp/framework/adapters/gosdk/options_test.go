@@ -56,11 +56,55 @@ func TestAdapterOption_WithLogger(t *testing.T) {
 }
 
 func TestAdapterOption_WithMiddleware(t *testing.T) {
-	// Test that WithMiddleware option can be applied (even if it's a placeholder)
-	adapter := NewGoSDKAdapter("test", "1.0.0", WithMiddleware(nil))
-
-	if adapter == nil {
+	// Test with nil middleware (should not crash)
+	adapter1 := NewGoSDKAdapter("test", "1.0.0", WithMiddleware(nil))
+	if adapter1 == nil {
 		t.Fatal("NewGoSDKAdapter() returned nil")
 	}
-	// Middleware integration is not yet implemented, so we just verify it doesn't crash
+	if adapter1.middleware == nil {
+		t.Error("Expected middleware chain to be created")
+	}
+
+	// Test with Middleware interface
+	mw := &testMiddlewareForOptions{
+		toolFunc: func(next ToolHandlerFunc) ToolHandlerFunc {
+			return func(ctx context.Context, req *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+				return next(ctx, req)
+			}
+		},
+	}
+	adapter2 := NewGoSDKAdapter("test", "1.0.0", WithMiddleware(mw))
+	if adapter2 == nil {
+		t.Fatal("NewGoSDKAdapter() returned nil")
+	}
+
+	// Test with config function
+	adapter3 := NewGoSDKAdapter("test", "1.0.0", WithMiddleware(func(chain *MiddlewareChain) {
+		chain.AddToolMiddleware(func(next ToolHandlerFunc) ToolHandlerFunc {
+			return next
+		})
+	}))
+	if adapter3 == nil {
+		t.Fatal("NewGoSDKAdapter() returned nil")
+	}
+}
+
+// testMiddlewareForOptions is a test implementation for options_test.go
+type testMiddlewareForOptions struct {
+	toolFunc func(ToolHandlerFunc) ToolHandlerFunc
+}
+
+func (tm *testMiddlewareForOptions) ToolMiddleware(next ToolHandlerFunc) ToolHandlerFunc {
+	if tm.toolFunc != nil {
+		return tm.toolFunc(next)
+	}
+	return next
+}
+
+func (tm *testMiddlewareForOptions) PromptMiddleware(next PromptHandlerFunc) PromptHandlerFunc {
+	return next
+}
+
+func (tm *testMiddlewareForOptions) ResourceMiddleware(next ResourceHandlerFunc) ResourceHandlerFunc {
+	return next
 }

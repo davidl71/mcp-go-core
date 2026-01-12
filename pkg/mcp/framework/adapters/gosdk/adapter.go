@@ -19,6 +19,7 @@ type GoSDKAdapter struct {
 	toolHandlers map[string]framework.ToolHandler
 	toolInfo     map[string]types.ToolInfo
 	logger       *logging.Logger
+	middleware   *MiddlewareChain
 }
 
 // NewGoSDKAdapter creates a new Go SDK adapter
@@ -33,6 +34,7 @@ func NewGoSDKAdapter(name, version string, opts ...AdapterOption) *GoSDKAdapter 
 		toolHandlers: make(map[string]framework.ToolHandler),
 		toolInfo:     make(map[string]types.ToolInfo),
 		logger:       logging.NewLogger(), // Default logger
+		middleware:   NewMiddlewareChain(), // Default empty middleware chain
 	}
 
 	// Apply options
@@ -141,9 +143,9 @@ func (a *GoSDKAdapter) RegisterPrompt(name, description string, handler framewor
 		Description: description,
 	}
 
-	// Create prompt handler that matches the new API
+	// Create base prompt handler that matches the new API
 	// The new API uses: func(context.Context, *GetPromptRequest) (*GetPromptResult, error)
-	promptHandler := func(ctx context.Context, req *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
+	basePromptHandler := func(ctx context.Context, req *mcp.GetPromptRequest) (*mcp.GetPromptResult, error) {
 		// Check context cancellation
 		if err := ValidateContext(ctx); err != nil {
 			return nil, err
@@ -175,6 +177,9 @@ func (a *GoSDKAdapter) RegisterPrompt(name, description string, handler framewor
 			},
 		}, nil
 	}
+
+	// Wrap with middleware chain
+	promptHandler := a.middleware.WrapPromptHandler(basePromptHandler)
 
 	// Use server.AddPrompt with the new API
 	a.server.AddPrompt(prompt, promptHandler)
