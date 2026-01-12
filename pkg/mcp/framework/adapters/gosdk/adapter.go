@@ -205,9 +205,9 @@ func (a *GoSDKAdapter) RegisterResource(uri, name, description, mimeType string,
 		MIMEType:    mimeType,
 	}
 
-	// Create resource handler that matches the new API
+	// Create base resource handler that matches the new API
 	// The new API uses: func(context.Context, *ReadResourceRequest) (*ReadResourceResult, error)
-	resourceHandler := func(ctx context.Context, req *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
+	baseResourceHandler := func(ctx context.Context, req *mcp.ReadResourceRequest) (*mcp.ReadResourceResult, error) {
 		// Check context cancellation
 		if err := ValidateContext(ctx); err != nil {
 			return nil, err
@@ -239,6 +239,9 @@ func (a *GoSDKAdapter) RegisterResource(uri, name, description, mimeType string,
 			},
 		}, nil
 	}
+
+	// Wrap with middleware chain
+	resourceHandler := a.middleware.WrapResourceHandler(baseResourceHandler)
 
 	// Use server.AddResource with the new API
 	a.server.AddResource(resource, resourceHandler)
