@@ -498,9 +498,6 @@ func TestLogger_WithContext(t *testing.T) {
 	ctxLogger.Info("Test message")
 	
 	output := buf.String()
-	
-	// Debug: print actual output
-	t.Logf("Actual output: %q", output)
 
 	// Check that context fields are present (slog uses "request_id=req-123" format)
 	// slog text format: time=... level=INFO msg="Test message" request_id=req-123 operation=test_operation
