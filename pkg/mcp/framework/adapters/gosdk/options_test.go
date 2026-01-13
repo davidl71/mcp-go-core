@@ -1,9 +1,11 @@
 package gosdk
 
 import (
+	"context"
 	"testing"
 
 	"github.com/davidl71/mcp-go-core/pkg/mcp/logging"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func TestNewGoSDKAdapter_WithOptions(t *testing.T) {
