@@ -5,9 +5,9 @@ go 1.24.0
 toolchain go1.24.11
 
 require (
+	github.com/metoro-io/mcp-golang v0.16.0
 	github.com/modelcontextprotocol/go-sdk v1.2.0
 	golang.org/x/term v0.38.0
-	github.com/metoro-io/mcp-golang v0.16.0
 )
 
 require (
@@ -24,5 +24,6 @@ require (
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
