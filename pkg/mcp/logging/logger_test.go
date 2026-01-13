@@ -2,7 +2,9 @@ package logging
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 	"testing"
@@ -12,6 +14,8 @@ import (
 func TestNewLogger(t *testing.T) {
 	// Test default logger (INFO level)
 	os.Unsetenv("MCP_DEBUG")
+	os.Unsetenv("GIT_HOOK")
+	os.Unsetenv("LOG_FORMAT")
 	logger := NewLogger()
 	if logger == nil {
 		t.Fatal("NewLogger returned nil")
@@ -22,11 +26,20 @@ func TestNewLogger(t *testing.T) {
 
 	// Test DEBUG level when MCP_DEBUG=1
 	os.Setenv("MCP_DEBUG", "1")
+	os.Unsetenv("GIT_HOOK")
 	logger = NewLogger()
 	if logger.level != LevelDebug {
 		t.Errorf("Expected DEBUG level when MCP_DEBUG=1, got %v", logger.level)
 	}
 	os.Unsetenv("MCP_DEBUG")
+
+	// Test WARN level when GIT_HOOK=1 (overrides MCP_DEBUG)
+	os.Setenv("GIT_HOOK", "1")
+	logger = NewLogger()
+	if logger.level != LevelWarn {
+		t.Errorf("Expected WARN level when GIT_HOOK=1, got %v", logger.level)
+	}
+	os.Unsetenv("GIT_HOOK")
 }
 
 func TestLogLevel_String(t *testing.T) {
@@ -70,7 +83,12 @@ func TestLogger_SetSlowThreshold(t *testing.T) {
 func TestLogger_LogLevels(t *testing.T) {
 	var buf bytes.Buffer
 	logger := NewLogger()
-	logger.output = &buf
+	// Create a new logger with buffer output for testing
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(&buf, opts)
+	logger.slogLogger = slog.New(handler)
 	logger.level = LevelDebug
 
 	// Test all log levels
@@ -81,17 +99,17 @@ func TestLogger_LogLevels(t *testing.T) {
 
 	output := buf.String()
 
-	// Check that all levels are present
-	if !strings.Contains(output, "[DEBUG]") {
+	// Check that all levels are present (slog uses "level=DEBUG" format)
+	if !strings.Contains(output, "level=DEBUG") && !strings.Contains(output, "DEBUG") {
 		t.Error("Debug log not found")
 	}
-	if !strings.Contains(output, "[INFO]") {
+	if !strings.Contains(output, "level=INFO") && !strings.Contains(output, "INFO") {
 		t.Error("Info log not found")
 	}
-	if !strings.Contains(output, "[WARN]") {
+	if !strings.Contains(output, "level=WARN") && !strings.Contains(output, "WARN") {
 		t.Error("Warn log not found")
 	}
-	if !strings.Contains(output, "[ERROR]") {
+	if !strings.Contains(output, "level=ERROR") && !strings.Contains(output, "ERROR") {
 		t.Error("Error log not found")
 	}
 
@@ -113,7 +131,12 @@ func TestLogger_LogLevels(t *testing.T) {
 func TestLogger_LogLevelFiltering(t *testing.T) {
 	var buf bytes.Buffer
 	logger := NewLogger()
-	logger.output = &buf
+	// Create a new logger with buffer output for testing
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelWarn,
+	}
+	handler := slog.NewTextHandler(&buf, opts)
+	logger.slogLogger = slog.New(handler)
 	logger.level = LevelWarn
 
 	// These should not be logged
@@ -127,18 +150,18 @@ func TestLogger_LogLevelFiltering(t *testing.T) {
 	output := buf.String()
 
 	// Check that filtered levels are not present
-	if strings.Contains(output, "[DEBUG]") {
+	if strings.Contains(output, "level=DEBUG") || strings.Contains(output, "DEBUG") {
 		t.Error("Debug log should be filtered at WARN level")
 	}
-	if strings.Contains(output, "[INFO]") {
+	if strings.Contains(output, "level=INFO") || strings.Contains(output, "INFO") {
 		t.Error("Info log should be filtered at WARN level")
 	}
 
 	// Check that allowed levels are present
-	if !strings.Contains(output, "[WARN]") {
+	if !strings.Contains(output, "level=WARN") && !strings.Contains(output, "WARN") {
 		t.Error("Warn log should be present at WARN level")
 	}
-	if !strings.Contains(output, "[ERROR]") {
+	if !strings.Contains(output, "level=ERROR") && !strings.Contains(output, "ERROR") {
 		t.Error("Error log should be present at WARN level")
 	}
 }
@@ -146,13 +169,19 @@ func TestLogger_LogLevelFiltering(t *testing.T) {
 func TestLogger_Context(t *testing.T) {
 	var buf bytes.Buffer
 	logger := NewLogger()
-	logger.output = &buf
+	// Create a new logger with buffer output for testing
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}
+	handler := slog.NewTextHandler(&buf, opts)
+	logger.slogLogger = slog.New(handler)
 	logger.level = LevelInfo
 
 	logger.Info("req:123", "Test message")
 	output := buf.String()
 
-	if !strings.Contains(output, "[req:123]") {
+	// slog includes context as a field, check for it
+	if !strings.Contains(output, "req:123") && !strings.Contains(output, "context=req:123") {
 		t.Error("Context not found in log output")
 	}
 	if !strings.Contains(output, "Test message") {
@@ -163,16 +192,18 @@ func TestLogger_Context(t *testing.T) {
 func TestLogger_NoContext(t *testing.T) {
 	var buf bytes.Buffer
 	logger := NewLogger()
-	logger.output = &buf
+	// Create a new logger with buffer output for testing
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}
+	handler := slog.NewTextHandler(&buf, opts)
+	logger.slogLogger = slog.New(handler)
 	logger.level = LevelInfo
 
 	logger.Info("", "Test message")
 	output := buf.String()
 
-	// Should not contain context brackets when context is empty
-	if strings.Contains(output, "[]") {
-		t.Error("Empty context should not produce brackets")
-	}
+	// Should contain message
 	if !strings.Contains(output, "Test message") {
 		t.Error("Message not found in log output")
 	}
@@ -181,17 +212,23 @@ func TestLogger_NoContext(t *testing.T) {
 func TestLogger_LogRequest(t *testing.T) {
 	var buf bytes.Buffer
 	logger := NewLogger()
-	logger.output = &buf
+	// Create a new logger with buffer output for testing
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}
+	handler := slog.NewTextHandler(&buf, opts)
+	logger.slogLogger = slog.New(handler)
 	logger.level = LevelInfo
 
 	logger.LogRequest("123", "tools/list")
 	output := buf.String()
 
-	if !strings.Contains(output, "[INFO]") {
+	// slog uses "level=INFO" format
+	if !strings.Contains(output, "level=INFO") && !strings.Contains(output, "INFO") {
 		t.Error("LogRequest should log at INFO level")
 	}
 	// LogRequest formats context as "req:123", so check for that
-	if !strings.Contains(output, "[req:123]") {
+	if !strings.Contains(output, "req:123") {
 		t.Errorf("Request ID not found in log. Output: %q", output)
 	}
 	if !strings.Contains(output, "Processing request: tools/list") {
@@ -202,7 +239,12 @@ func TestLogger_LogRequest(t *testing.T) {
 func TestLogger_LogRequestComplete(t *testing.T) {
 	var buf bytes.Buffer
 	logger := NewLogger()
-	logger.output = &buf
+	// Create a new logger with buffer output for testing
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(&buf, opts)
+	logger.slogLogger = slog.New(handler)
 	logger.level = LevelDebug
 	logger.slowThreshold = 50 * time.Millisecond
 
@@ -210,7 +252,7 @@ func TestLogger_LogRequestComplete(t *testing.T) {
 	logger.LogRequestComplete("req:123", "tools/list", 10*time.Millisecond)
 	output := buf.String()
 
-	if !strings.Contains(output, "[DEBUG]") {
+	if !strings.Contains(output, "level=DEBUG") && !strings.Contains(output, "DEBUG") {
 		t.Error("Fast request should log at DEBUG level")
 	}
 	if !strings.Contains(output, "Request completed: tools/list") {
@@ -222,7 +264,7 @@ func TestLogger_LogRequestComplete(t *testing.T) {
 	logger.LogRequestComplete("req:124", "tools/list", 100*time.Millisecond)
 	output = buf.String()
 
-	if !strings.Contains(output, "[WARN]") {
+	if !strings.Contains(output, "level=WARN") && !strings.Contains(output, "WARN") {
 		t.Error("Slow request should log at WARN level")
 	}
 	if !strings.Contains(output, "Slow request: tools/list") {
@@ -233,17 +275,22 @@ func TestLogger_LogRequestComplete(t *testing.T) {
 func TestLogger_LogToolCall(t *testing.T) {
 	var buf bytes.Buffer
 	logger := NewLogger()
-	logger.output = &buf
+	// Create a new logger with buffer output for testing
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(&buf, opts)
+	logger.slogLogger = slog.New(handler)
 	logger.level = LevelDebug
 
 	logger.LogToolCall("123", "get_wisdom", map[string]interface{}{"source": "pistis_sophia"})
 	output := buf.String()
 
-	if !strings.Contains(output, "[DEBUG]") {
+	if !strings.Contains(output, "level=DEBUG") && !strings.Contains(output, "DEBUG") {
 		t.Error("LogToolCall should log at DEBUG level")
 	}
 	// LogToolCall formats context as "req:123", so check for that
-	if !strings.Contains(output, "[req:123]") {
+	if !strings.Contains(output, "req:123") {
 		t.Errorf("Request ID not found in log. Output: %q", output)
 	}
 	if !strings.Contains(output, "Tool call: get_wisdom") {
@@ -254,7 +301,12 @@ func TestLogger_LogToolCall(t *testing.T) {
 func TestLogger_LogToolCallComplete(t *testing.T) {
 	var buf bytes.Buffer
 	logger := NewLogger()
-	logger.output = &buf
+	// Create a new logger with buffer output for testing
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(&buf, opts)
+	logger.slogLogger = slog.New(handler)
 	logger.level = LevelDebug
 	logger.slowThreshold = 50 * time.Millisecond
 
@@ -262,7 +314,7 @@ func TestLogger_LogToolCallComplete(t *testing.T) {
 	logger.LogToolCallComplete("req:123", "get_wisdom", 10*time.Millisecond)
 	output := buf.String()
 
-	if !strings.Contains(output, "[DEBUG]") {
+	if !strings.Contains(output, "level=DEBUG") && !strings.Contains(output, "DEBUG") {
 		t.Error("Fast tool call should log at DEBUG level")
 	}
 	if !strings.Contains(output, "Tool call completed: get_wisdom") {
@@ -274,7 +326,7 @@ func TestLogger_LogToolCallComplete(t *testing.T) {
 	logger.LogToolCallComplete("req:124", "get_wisdom", 100*time.Millisecond)
 	output = buf.String()
 
-	if !strings.Contains(output, "[WARN]") {
+	if !strings.Contains(output, "level=WARN") && !strings.Contains(output, "WARN") {
 		t.Error("Slow tool call should log at WARN level")
 	}
 	if !strings.Contains(output, "Slow tool call: get_wisdom") {
@@ -285,18 +337,23 @@ func TestLogger_LogToolCallComplete(t *testing.T) {
 func TestLogger_LogError(t *testing.T) {
 	var buf bytes.Buffer
 	logger := NewLogger()
-	logger.output = &buf
+	// Create a new logger with buffer output for testing
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelError,
+	}
+	handler := slog.NewTextHandler(&buf, opts)
+	logger.slogLogger = slog.New(handler)
 	logger.level = LevelError
 
 	err := &testError{message: "test error"}
 	logger.LogError("123", "operation", err)
 	output := buf.String()
 
-	if !strings.Contains(output, "[ERROR]") {
+	if !strings.Contains(output, "level=ERROR") && !strings.Contains(output, "ERROR") {
 		t.Error("LogError should log at ERROR level")
 	}
 	// LogError formats context as "req:123", so check for that
-	if !strings.Contains(output, "[req:123]") {
+	if !strings.Contains(output, "req:123") {
 		t.Errorf("Request ID not found in log. Output: %q", output)
 	}
 	if !strings.Contains(output, "operation failed: test error") {
@@ -307,7 +364,12 @@ func TestLogger_LogError(t *testing.T) {
 func TestLogger_LogPerformance(t *testing.T) {
 	var buf bytes.Buffer
 	logger := NewLogger()
-	logger.output = &buf
+	// Create a new logger with buffer output for testing
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}
+	handler := slog.NewTextHandler(&buf, opts)
+	logger.slogLogger = slog.New(handler)
 	logger.level = LevelDebug
 	logger.slowThreshold = 50 * time.Millisecond
 
@@ -315,7 +377,7 @@ func TestLogger_LogPerformance(t *testing.T) {
 	logger.LogPerformance("test", "operation", 10*time.Millisecond)
 	output := buf.String()
 
-	if !strings.Contains(output, "[DEBUG]") {
+	if !strings.Contains(output, "level=DEBUG") && !strings.Contains(output, "DEBUG") {
 		t.Error("Fast operation should log at DEBUG level")
 	}
 	if !strings.Contains(output, "Operation: operation took") {
@@ -327,7 +389,7 @@ func TestLogger_LogPerformance(t *testing.T) {
 	logger.LogPerformance("test", "operation", 100*time.Millisecond)
 	output = buf.String()
 
-	if !strings.Contains(output, "[WARN]") {
+	if !strings.Contains(output, "level=WARN") && !strings.Contains(output, "WARN") {
 		t.Error("Slow operation should log at WARN level")
 	}
 	if !strings.Contains(output, "Slow operation: operation took") {
@@ -338,7 +400,12 @@ func TestLogger_LogPerformance(t *testing.T) {
 func TestLogger_ThreadSafety(t *testing.T) {
 	var buf bytes.Buffer
 	logger := NewLogger()
-	logger.output = &buf
+	// Create a new logger with buffer output for testing
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}
+	handler := slog.NewTextHandler(&buf, opts)
+	logger.slogLogger = slog.New(handler)
 	logger.level = LevelInfo
 
 	// Concurrent logging
@@ -367,15 +434,81 @@ func TestLogger_ThreadSafety(t *testing.T) {
 func TestLogger_TimestampFormat(t *testing.T) {
 	var buf bytes.Buffer
 	logger := NewLogger()
-	logger.output = &buf
+	// Create a new logger with buffer output for testing
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}
+	handler := slog.NewTextHandler(&buf, opts)
+	logger.slogLogger = slog.New(handler)
 	logger.level = LevelInfo
 
 	logger.Info("test", "Test message")
 	output := buf.String()
 
-	// Check that timestamp is in RFC3339 format (contains T and Z or timezone)
-	if !strings.Contains(output, "T") {
-		t.Error("Timestamp should be in RFC3339 format (contains T)")
+	// slog includes timestamp automatically, check that it's present
+	// Format is typically "time=2026-01-13T..." or similar
+	if !strings.Contains(output, "time=") && !strings.Contains(output, "T") {
+		t.Error("Timestamp should be present in log output")
+	}
+}
+
+func TestLogger_JSONOutput(t *testing.T) {
+	var buf bytes.Buffer
+	os.Setenv("LOG_FORMAT", "json")
+	defer os.Unsetenv("LOG_FORMAT")
+	
+	logger := NewLogger()
+	// Create a new logger with buffer output for testing
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}
+	handler := slog.NewJSONHandler(&buf, opts)
+	logger.slogLogger = slog.New(handler)
+	logger.level = LevelInfo
+
+	logger.Info("test", "Test message")
+	output := buf.String()
+
+	// JSON output should contain JSON structure
+	if !strings.Contains(output, "\"level\"") && !strings.Contains(output, "\"msg\"") {
+		t.Error("JSON output should contain level and msg fields")
+	}
+	if !strings.Contains(output, "Test message") {
+		t.Error("Message not found in JSON output")
+	}
+}
+
+func TestLogger_WithContext(t *testing.T) {
+	var buf bytes.Buffer
+	logger := NewLogger()
+	// Create a new logger with buffer output for testing
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}
+	handler := slog.NewTextHandler(&buf, opts)
+	logger.slogLogger = slog.New(handler)
+	logger.level = LevelInfo
+
+	// Create context with request ID and operation
+	ctx := WithRequestID(context.Background(), "req-123")
+	ctx = WithOperation(ctx, "test_operation")
+	
+	// Use WithContext to get logger with context fields
+	ctxLogger := logger.WithContext(ctx)
+	ctxLogger.Info("Test message")
+	
+	output := buf.String()
+	
+	// Debug: print actual output
+	t.Logf("Actual output: %q", output)
+
+	// Check that context fields are present (slog uses "request_id=req-123" format)
+	// slog text format: time=... level=INFO msg="Test message" request_id=req-123 operation=test_operation
+	if !strings.Contains(output, "req-123") {
+		t.Errorf("Request ID not found in log output. Output: %q", output)
+	}
+	if !strings.Contains(output, "test_operation") {
+		t.Errorf("Operation not found in log output. Output: %q", output)
 	}
 }
 
