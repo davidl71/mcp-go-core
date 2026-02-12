@@ -2,9 +2,10 @@ package gosdk
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
+
+	"github.com/davidl71/mcp-go-core/pkg/mcp/framework"
 )
 
 func TestValidateContext(t *testing.T) {
@@ -79,15 +80,9 @@ func TestValidateContext(t *testing.T) {
 						t.Errorf("ValidateContext() error = %q, want error containing %q", errorMsg, tt.errMsg)
 					}
 				}
-				// Verify error can be unwrapped
-				if !errors.Is(err, context.Canceled) && tt.ctx != nil {
-					// If context was cancelled, error should wrap context.Canceled
-					if tt.ctx.Err() == context.Canceled {
-						var cancelErr error
-						if errors.As(err, &cancelErr) {
-							// Error should be related to cancellation
-						}
-					}
+				// Verify typed error is ErrContextCancelled when context was cancelled/nil
+				if tt.wantErr && err != nil && !framework.IsContextCancelled(err) {
+					t.Error("ValidateContext() should return ErrContextCancelled for nil or cancelled context")
 				}
 			}
 		})
