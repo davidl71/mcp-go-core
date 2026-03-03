@@ -112,8 +112,11 @@ func (a *GoSDKAdapter) RegisterTool(name, description string, schema types.ToolS
 		}, nil
 	}
 
-	// Use server.AddTool (low-level API) since we're using ToolHandler
-	a.server.AddTool(tool, toolHandler)
+	// Apply middleware chain (T-274) - wrap before AddTool
+	wrappedHandler := a.middleware.WrapToolHandler(toolHandler)
+
+	// Use server.AddTool (low-level API). Convert to mcp.ToolHandler (same signature, different type).
+	a.server.AddTool(tool, mcp.ToolHandler(wrappedHandler))
 
 	// Store handler and info for CLI access
 	a.toolHandlers[name] = handler
