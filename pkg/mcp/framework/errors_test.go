@@ -2,6 +2,7 @@ package framework
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 )
 
@@ -106,6 +107,58 @@ func TestErrResourceNotFound(t *testing.T) {
 	}
 }
 
+func TestErrInvalidRequest(t *testing.T) {
+	err := &ErrInvalidRequest{
+		RequestType: "CallTool",
+		Reason:      "request cannot be nil",
+	}
+	errorMsg := err.Error()
+	expected := `invalid CallTool request: request cannot be nil`
+	if errorMsg != expected {
+		t.Errorf("ErrInvalidRequest.Error() = %q, want %q", errorMsg, expected)
+	}
+	if !IsInvalidRequest(err) {
+		t.Error("IsInvalidRequest() should return true for ErrInvalidRequest")
+	}
+}
+
+func TestErrTransport(t *testing.T) {
+	err := &ErrTransport{Reason: "server is nil"}
+	errorMsg := err.Error()
+	expected := `transport: server is nil`
+	if errorMsg != expected {
+		t.Errorf("ErrTransport.Error() = %q, want %q", errorMsg, expected)
+	}
+	if !IsTransport(err) {
+		t.Error("IsTransport() should return true for ErrTransport")
+	}
+}
+
+func TestErrContextCancelled(t *testing.T) {
+	t.Run("with nil Err", func(t *testing.T) {
+		err := &ErrContextCancelled{Err: nil}
+		errorMsg := err.Error()
+		expected := "context cannot be nil"
+		if errorMsg != expected {
+			t.Errorf("ErrContextCancelled.Error() = %q, want %q", errorMsg, expected)
+		}
+		if !IsContextCancelled(err) {
+			t.Error("IsContextCancelled() should return true for ErrContextCancelled")
+		}
+	})
+	t.Run("with wrapped error", func(t *testing.T) {
+		inner := errors.New("deadline exceeded")
+		err := &ErrContextCancelled{Err: inner}
+		if err.Unwrap() != inner {
+			t.Error("Unwrap() should return the inner error")
+		}
+		var target *ErrContextCancelled
+		if !errors.As(err, &target) {
+			t.Error("errors.As() should work with ErrContextCancelled")
+		}
+	})
+}
+
 func TestErrorHelperFunctions(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -152,5 +205,21 @@ func TestErrorHelperFunctions(t *testing.T) {
 				t.Errorf("%s() = %v, want %v", tt.name, result, tt.expected)
 			}
 		})
+	}
+}
+
+func TestIsHelpersWithWrappedErrors(t *testing.T) {
+	// When errors are wrapped with fmt.Errorf("%w", err), Is* should still detect them via errors.As
+	wrappedToolNotFound := fmt.Errorf("operation failed: %w", &ErrToolNotFound{ToolName: "x"})
+	if !IsToolNotFound(wrappedToolNotFound) {
+		t.Error("IsToolNotFound() should return true for wrapped ErrToolNotFound")
+	}
+	wrappedInvalidTool := fmt.Errorf("validation: %w", &ErrInvalidTool{ToolName: "y", Reason: "bad"})
+	if !IsInvalidTool(wrappedInvalidTool) {
+		t.Error("IsInvalidTool() should return true for wrapped ErrInvalidTool")
+	}
+	wrappedErrTransport := fmt.Errorf("run failed: %w", &ErrTransport{Reason: "not started"})
+	if !IsTransport(wrappedErrTransport) {
+		t.Error("IsTransport() should return true for wrapped ErrTransport")
 	}
 }

@@ -2,6 +2,7 @@ package security
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 )
@@ -134,4 +135,97 @@ func TestCheckRateLimit(t *testing.T) {
 	}
 
 	rl.Stop()
+}
+
+// TestRateLimiterConcurrentRequests tests T-291: concurrent requests from multiple goroutines.
+// Verifies rate limiter is safe under concurrent access and enforces limits correctly.
+func TestRateLimiterConcurrentRequests(t *testing.T) {
+	rl := NewRateLimiter(1*time.Second, 10)
+	defer rl.Stop()
+
+	var allowed, denied int
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+
+	for i := 0; i < 30; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ok := rl.Allow("concurrent-client")
+			mu.Lock()
+			if ok {
+				allowed++
+			} else {
+				denied++
+			}
+			mu.Unlock()
+		}()
+	}
+
+	wg.Wait()
+
+	// Should allow exactly 10, deny 20
+	if allowed != 10 {
+		t.Errorf("expected 10 allowed, got %d", allowed)
+	}
+	if denied != 20 {
+		t.Errorf("expected 20 denied, got %d", denied)
+	}
+}
+
+// TestRateLimiterSlidingWindowAccuracy tests T-289: sliding window accuracy.
+// Verifies that requests are correctly expired as the window slides.
+func TestRateLimiterSlidingWindowAccuracy(t *testing.T) {
+	rl := NewRateLimiter(100*time.Millisecond, 2)
+	defer rl.Stop()
+
+	// Use 2 requests
+	if !rl.Allow("slide") {
+		t.Error("request 1 should be allowed")
+	}
+	if !rl.Allow("slide") {
+		t.Error("request 2 should be allowed")
+	}
+	if rl.Allow("slide") {
+		t.Error("request 3 should be denied")
+	}
+
+	// Wait 60ms - oldest request should still be in window
+	time.Sleep(60 * time.Millisecond)
+	if rl.Allow("slide") {
+		t.Error("request before window slides should be denied")
+	}
+
+	// Wait another 50ms - oldest request expires (100ms total from first)
+	time.Sleep(50 * time.Millisecond)
+	if !rl.Allow("slide") {
+		t.Error("request after window slides should be allowed")
+	}
+}
+
+// TestRateLimiterResetBehavior tests T-292: limit reset after window expires.
+func TestRateLimiterResetBehavior(t *testing.T) {
+	rl := NewRateLimiter(50*time.Millisecond, 2)
+	defer rl.Stop()
+
+	// Exhaust limit
+	rl.Allow("reset")
+	rl.Allow("reset")
+	if rl.Allow("reset") {
+		t.Error("third request should be denied")
+	}
+
+	// Wait for full window expiry
+	time.Sleep(60 * time.Millisecond)
+
+	// Limit should reset - 2 more allowed
+	if !rl.Allow("reset") {
+		t.Error("first request after reset should be allowed")
+	}
+	if !rl.Allow("reset") {
+		t.Error("second request after reset should be allowed")
+	}
+	if rl.Allow("reset") {
+		t.Error("third request after reset should be denied")
+	}
 }

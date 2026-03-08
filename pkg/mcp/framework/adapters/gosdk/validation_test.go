@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestValidateRegistration(t *testing.T) {
+func TestValidateToolRegistration(t *testing.T) {
 	tests := []struct {
 		name        string
 		toolName    string
@@ -48,29 +48,26 @@ func TestValidateRegistration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateRegistration(tt.toolName, tt.description, tt.handler)
+			err := ValidateToolRegistration(tt.toolName, tt.description, tt.handler)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ValidateRegistration() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ValidateToolRegistration() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if tt.wantErr && tt.errContains != "" {
 				if err == nil || err.Error() == "" {
-					t.Errorf("ValidateRegistration() error is nil or empty, want error containing %q", tt.errContains)
+					t.Errorf("ValidateToolRegistration() error is nil or empty, want error containing %q", tt.errContains)
 					return
 				}
-				if err.Error() != "" && tt.errContains != "" {
-					// Check if error message contains expected string
-					errorMsg := err.Error()
-					found := false
-					for i := 0; i <= len(errorMsg)-len(tt.errContains); i++ {
-						if errorMsg[i:i+len(tt.errContains)] == tt.errContains {
-							found = true
-							break
-						}
+				errorMsg := err.Error()
+				found := false
+				for i := 0; i <= len(errorMsg)-len(tt.errContains); i++ {
+					if errorMsg[i:i+len(tt.errContains)] == tt.errContains {
+						found = true
+						break
 					}
-					if !found {
-						t.Errorf("ValidateRegistration() error = %q, want error containing %q", errorMsg, tt.errContains)
-					}
+				}
+				if !found {
+					t.Errorf("ValidateToolRegistration() error = %q, want error containing %q", errorMsg, tt.errContains)
 				}
 			}
 		})
@@ -105,7 +102,7 @@ func TestValidateResourceRegistration(t *testing.T) {
 			errContains: "resource URI cannot be empty",
 		},
 		{
-			name:        "empty name (inherited from ValidateRegistration)",
+			name:        "empty name",
 			uri:         "file:///test",
 			toolName:    "",
 			description: "Test description",
@@ -114,7 +111,7 @@ func TestValidateResourceRegistration(t *testing.T) {
 			errContains: "name cannot be empty",
 		},
 		{
-			name:        "empty description (inherited from ValidateRegistration)",
+			name:        "empty description",
 			uri:         "file:///test",
 			toolName:    "test_resource",
 			description: "",
@@ -123,7 +120,7 @@ func TestValidateResourceRegistration(t *testing.T) {
 			errContains: "description cannot be empty",
 		},
 		{
-			name:        "nil handler (inherited from ValidateRegistration)",
+			name:        "nil handler",
 			uri:         "file:///test",
 			toolName:    "test_resource",
 			description: "Test description",
