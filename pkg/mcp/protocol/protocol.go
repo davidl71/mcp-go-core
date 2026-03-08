@@ -160,3 +160,26 @@ func NewInvalidParamsError(id interface{}, message string) *JSONRPCResponse {
 func NewInternalError(id interface{}, message string) *JSONRPCResponse {
 	return NewErrorResponse(id, ErrCodeInternalError, message, nil)
 }
+
+// FormatRequestID converts a JSON-RPC request ID to a string for logging.
+// Handles string, number (float64 from JSON), int, int64, and nil.
+func FormatRequestID(id interface{}) string {
+	if id == nil {
+		return "null"
+	}
+	switch v := id.(type) {
+	case string:
+		return v
+	case float64:
+		if v == float64(int64(v)) {
+			return fmt.Sprintf("%d", int64(v))
+		}
+		return fmt.Sprintf("%.0f", v)
+	case int:
+		return fmt.Sprintf("%d", v)
+	case int64:
+		return fmt.Sprintf("%d", v)
+	default:
+		return fmt.Sprintf("%v", id)
+	}
+}

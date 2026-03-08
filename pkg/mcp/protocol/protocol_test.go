@@ -166,3 +166,26 @@ func TestToolCallParams_Marshal(t *testing.T) {
 		t.Errorf("Expected argument value1, got %v", unmarshaled.Arguments["arg1"])
 	}
 }
+
+func TestFormatRequestID(t *testing.T) {
+	tests := []struct {
+		name     string
+		id       interface{}
+		expected string
+	}{
+		{"nil", nil, "null"},
+		{"string", "req-1", "req-1"},
+		{"int", 42, "42"},
+		{"int64", int64(99), "99"},
+		{"float64 integer", float64(46), "46"},
+		{"float64 truncated", 3.14, "3"}, // %.0f for non-integer float64
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := FormatRequestID(tt.id)
+			if got != tt.expected {
+				t.Errorf("FormatRequestID(%v) = %q, want %q", tt.id, got, tt.expected)
+			}
+		})
+	}
+}
