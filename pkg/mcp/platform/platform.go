@@ -25,39 +25,39 @@ import (
 )
 
 // OS represents the operating system type
-type OS string
+type OSType string
 
 const (
 	// OSWindows represents Microsoft Windows
-	OSWindows OS = "windows"
+	OSWindows OSType = "windows"
 	// OSLinux represents Linux
-	OSLinux OS = "linux"
+	OSLinux OSType = "linux"
 	// OSDarwin represents macOS (Darwin)
-	OSDarwin OS = "darwin"
+	OSDarwin OSType = "darwin"
 	// OSUnknown represents an unknown operating system
-	OSUnknown OS = "unknown"
+	OSUnknown OSType = "unknown"
 )
 
 // Architecture represents the CPU architecture
-type Architecture string
+type ArchType string
 
 const (
 	// ArchAMD64 represents x86-64 (64-bit Intel/AMD)
-	ArchAMD64 Architecture = "amd64"
+	ArchAMD64 ArchType = "amd64"
 	// ArchARM64 represents ARM64 (64-bit ARM)
-	ArchARM64 Architecture = "arm64"
+	ArchARM64 ArchType = "arm64"
 	// Arch386 represents x86 (32-bit Intel/AMD)
-	Arch386 Architecture = "386"
+	Arch386 ArchType = "386"
 	// ArchARM represents ARM (32-bit ARM)
-	ArchARM Architecture = "arm"
+	ArchARM ArchType = "arm"
 	// ArchUnknown represents an unknown architecture
-	ArchUnknown Architecture = "unknown"
+	ArchUnknown ArchType = "unknown"
 )
 
 // PlatformInfo contains information about the current platform
 type PlatformInfo struct {
-	OS           OS
-	Architecture Architecture
+	OS           OSType
+	Architecture ArchType
 	GOOS         string
 	GOARCH       string
 }
@@ -65,15 +65,15 @@ type PlatformInfo struct {
 // Detect returns the current platform information
 func Detect() *PlatformInfo {
 	return &PlatformInfo{
-		OS:           OS(runtime.GOOS),
-		Architecture: Architecture(runtime.GOARCH),
+		OS:           OSType(runtime.GOOS),
+		Architecture: ArchType(runtime.GOARCH),
 		GOOS:         runtime.GOOS,
 		GOARCH:       runtime.GOARCH,
 	}
 }
 
 // OS returns the current operating system
-func OS() OS {
+func OS() OSType {
 	goos := runtime.GOOS
 	switch goos {
 	case "windows":
@@ -88,7 +88,7 @@ func OS() OS {
 }
 
 // Architecture returns the current CPU architecture
-func Architecture() Architecture {
+func Architecture() ArchType {
 	goarch := runtime.GOARCH
 	switch goarch {
 	case "amd64", "x86_64":
@@ -140,14 +140,7 @@ func Is32Bit() bool {
 // On Windows, converts forward slashes to backslashes.
 // On Unix-like systems, ensures forward slashes.
 func NormalizePath(path string) string {
-	if IsWindows() {
-		// Windows uses backslashes, but Go's filepath package handles this
-		// We'll just ensure consistent forward slashes for cross-platform compatibility
-		// The filepath package will handle the conversion when needed
-		return strings.ReplaceAll(path, "\\", "/")
-	}
-	// Unix-like systems use forward slashes
-	return path
+	return strings.ReplaceAll(path, "\\", "/")
 }
 
 // PathSeparator returns the path separator for the current platform
@@ -173,6 +166,6 @@ func (p *PlatformInfo) String() string {
 }
 
 // IsCompatible checks if the current platform is compatible with the given OS and architecture
-func (p *PlatformInfo) IsCompatible(os OS, arch Architecture) bool {
+func (p *PlatformInfo) IsCompatible(os OSType, arch ArchType) bool {
 	return p.OS == os && p.Architecture == arch
 }

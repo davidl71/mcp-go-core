@@ -52,22 +52,22 @@ func TestParseArgs_WithFlags(t *testing.T) {
 	if args.Subcommand != "call" {
 		t.Errorf("args.Subcommand = %q, want %q", args.Subcommand, "call")
 	}
-	if args.GetFlag("name") != "my_tool" {
-		t.Errorf("args.GetFlag(\"name\") = %q, want %q", args.GetFlag("name"), "my_tool")
+	if args.GetFlag("name", "") != "my_tool" {
+		t.Errorf("args.GetFlag(\"name\") = %q, want %q", args.GetFlag("name", ""), "my_tool")
 	}
-	if args.GetFlag("arg") != "value" {
-		t.Errorf("args.GetFlag(\"arg\") = %q, want %q", args.GetFlag("arg"), "value")
+	if args.GetFlag("arg", "") != "value" {
+		t.Errorf("args.GetFlag(\"arg\") = %q, want %q", args.GetFlag("arg", ""), "value")
 	}
 }
 
 func TestParseArgs_FlagEqualsValue(t *testing.T) {
 	args := ParseArgs([]string{"tool", "call", "--name=my_tool", "--arg=value"})
 
-	if args.GetFlag("name") != "my_tool" {
-		t.Errorf("args.GetFlag(\"name\") = %q, want %q", args.GetFlag("name"), "my_tool")
+	if args.GetFlag("name", "") != "my_tool" {
+		t.Errorf("args.GetFlag(\"name\") = %q, want %q", args.GetFlag("name", ""), "my_tool")
 	}
-	if args.GetFlag("arg") != "value" {
-		t.Errorf("args.GetFlag(\"arg\") = %q, want %q", args.GetFlag("arg"), "value")
+	if args.GetFlag("arg", "") != "value" {
+		t.Errorf("args.GetFlag(\"arg\") = %q, want %q", args.GetFlag("arg", ""), "value")
 	}
 }
 
@@ -77,8 +77,8 @@ func TestParseArgs_ShortFlags(t *testing.T) {
 	if !args.HasFlag("v") {
 		t.Error("args.HasFlag(\"v\") = false, want true")
 	}
-	if args.GetFlag("f") != "file.txt" {
-		t.Errorf("args.GetFlag(\"f\") = %q, want %q", args.GetFlag("f"), "file.txt")
+	if args.GetFlag("f", "") != "file.txt" {
+		t.Errorf("args.GetFlag(\"f\") = %q, want %q", args.GetFlag("f", ""), "file.txt")
 	}
 }
 
@@ -94,8 +94,8 @@ func TestParseArgs_BooleanFlags(t *testing.T) {
 	if args.GetBoolFlag("nonexistent", false) {
 		t.Error("args.GetBoolFlag(\"nonexistent\", false) = true, want false")
 	}
-	if args.GetBoolFlag("nonexistent", true) {
-		t.Error("args.GetBoolFlag(\"nonexistent\", true) = true, want true")
+	if !args.GetBoolFlag("nonexistent", true) {
+		t.Error("args.GetBoolFlag(\"nonexistent\", true) = false, want true")
 	}
 }
 

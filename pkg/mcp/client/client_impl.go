@@ -1,3 +1,4 @@
+//go:build !no_mcp_client
 // +build !no_mcp_client
 
 // Package client implementation using github.com/metoro-io/mcp-golang
@@ -15,6 +16,7 @@ package client
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 
 	mcp "github.com/metoro-io/mcp-golang"
@@ -31,11 +33,11 @@ func (c *Client) initUnderlyingClient() error {
 	}
 
 	// Create stdio transport
-	transport := stdio.NewStdioClientTransport()
-	
+	transport := stdio.NewStdioServerTransport()
+
 	// Create underlying client
 	underlyingClient := mcp.NewClient(transport)
-	
+
 	c.underlying = underlyingClient
 	return nil
 }
@@ -148,11 +150,19 @@ func (c *Client) ListResources(ctx context.Context) ([]protocol.Resource, error)
 	// Convert to protocol.Resource
 	resources := make([]protocol.Resource, 0, len(resourcesResponse.Resources))
 	for _, resource := range resourcesResponse.Resources {
+		desc := ""
+		if resource.Description != nil {
+			desc = *resource.Description
+		}
+		mimeType := ""
+		if resource.MimeType != nil {
+			mimeType = *resource.MimeType
+		}
 		resources = append(resources, protocol.Resource{
 			URI:         resource.Uri,
 			Name:        resource.Name,
-			Description: resource.Description,
-			MimeType:    resource.MimeType,
+			Description: desc,
+			MimeType:    mimeType,
 		})
 	}
 
@@ -176,7 +186,29 @@ func (c *Client) ReadResource(ctx context.Context, uri string) ([]byte, string, 
 		return nil, "", fmt.Errorf("failed to read resource %q: %w", uri, err)
 	}
 
-	return []byte(resource.Content), resource.MimeType, nil
+	if resource == nil || len(resource.Contents) == 0 {
+		return nil, "", fmt.Errorf("resource response contained no contents")
+	}
+	content := resource.Contents[0]
+	if content.TextResourceContents != nil {
+		mimeType := ""
+		if content.TextResourceContents.MimeType != nil {
+			mimeType = *content.TextResourceContents.MimeType
+		}
+		return []byte(content.TextResourceContents.Text), mimeType, nil
+	}
+	if content.BlobResourceContents != nil {
+		mimeType := ""
+		if content.BlobResourceContents.MimeType != nil {
+			mimeType = *content.BlobResourceContents.MimeType
+		}
+		data, err := base64.StdEncoding.DecodeString(content.BlobResourceContents.Blob)
+		if err != nil {
+			return nil, "", fmt.Errorf("failed to decode blob resource %q: %w", uri, err)
+		}
+		return data, mimeType, nil
+	}
+	return nil, "", fmt.Errorf("resource response contained unsupported content type")
 }
 
 // ListPrompts lists all available prompts from the server.

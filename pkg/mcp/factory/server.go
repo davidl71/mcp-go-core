@@ -32,5 +32,8 @@ func NewServer(frameworkType config.FrameworkType, name, version string) (framew
 
 // NewServerFromConfig creates server from configuration
 func NewServerFromConfig(cfg *config.BaseConfig) (framework.MCPServer, error) {
+	if cfg == nil {
+		return nil, fmt.Errorf("config cannot be nil")
+	}
 	return NewServer(cfg.Framework, cfg.Name, cfg.Version)
 }

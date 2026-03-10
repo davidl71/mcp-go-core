@@ -17,8 +17,6 @@ import (
 	"github.com/davidl71/mcp-go-core/pkg/mcp/config"
 	"github.com/davidl71/mcp-go-core/pkg/mcp/factory"
 	"github.com/davidl71/mcp-go-core/pkg/mcp/framework"
-	"github.com/davidl71/mcp-go-core/pkg/mcp/framework/adapters/gosdk"
-	"github.com/davidl71/mcp-go-core/pkg/mcp/logging"
 	"github.com/davidl71/mcp-go-core/pkg/mcp/types"
 )
 
@@ -255,7 +253,7 @@ func callTool(server framework.MCPServer, args *cli.Args) error {
 	}
 
 	toolName := args.Subcommand
-	argsJSON := args.GetFlag("args")
+	argsJSON := args.GetFlag("args", "")
 	if argsJSON == "" {
 		argsJSON = "{}"
 	}
