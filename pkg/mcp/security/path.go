@@ -124,3 +124,20 @@ func ValidatePathExists(path, projectRoot string) (string, error) {
 
 	return absPath, nil
 }
+
+// ValidatePathWithinRoot validates a path is within root and returns both absolute and relative paths.
+func ValidatePathWithinRoot(path, projectRoot string) (string, string, error) {
+	absPath, err := ValidatePath(path, projectRoot)
+	if err != nil {
+		return "", "", err
+	}
+
+	absProjectRoot, _ := filepath.Abs(projectRoot)
+
+	relPath, err := filepath.Rel(absProjectRoot, absPath)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get relative path: %w", err)
+	}
+
+	return absPath, relPath, nil
+}
