@@ -116,7 +116,7 @@ func ParseArgs(argv []string) *Args {
 				// --flag format (check if next arg is value)
 				if i+1 < len(argv) && argv[i+1][0] != '-' {
 					args.Flags[flag] = argv[i+1]
-					// Don't skip next arg - for loop's i++ handles it
+					i++ // Skip the consumed flag value
 				} else {
 					args.Flags[flag] = "true" // Boolean flag
 				}
@@ -129,7 +129,7 @@ func ParseArgs(argv []string) *Args {
 			flag := arg[1:]
 			if i+1 < len(argv) && argv[i+1][0] != '-' {
 				args.Flags[flag] = argv[i+1]
-				// Don't skip next arg - for loop's i++ handles it
+				i++ // Skip the consumed flag value
 			} else {
 				args.Flags[flag] = "true" // Boolean flag
 			}
