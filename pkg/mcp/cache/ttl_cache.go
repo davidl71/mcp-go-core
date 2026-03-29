@@ -1,0 +1,60 @@
+// ttl_cache.go — in-memory []byte cache with per-entry TTL.
+package cache
+
+import (
+	"sync"
+	"time"
+)
+
+type ttlEntry struct {
+	value     []byte
+	expiresAt time.Time
+}
+
+// TTLCache is a thread-safe key-value cache with per-entry TTL.
+type TTLCache struct {
+	mu    sync.RWMutex
+	store map[string]*ttlEntry
+}
+
+// NewTTLCache returns a new TTL cache.
+func NewTTLCache() *TTLCache {
+	return &TTLCache{store: make(map[string]*ttlEntry)}
+}
+
+// Get returns the value for key if present and not expired.
+func (c *TTLCache) Get(key string) ([]byte, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	e, ok := c.store[key]
+	if !ok || e == nil {
+		return nil, false
+	}
+	if time.Now().After(e.expiresAt) {
+		delete(c.store, key)
+		return nil, false
+	}
+
+	out := make([]byte, len(e.value))
+	copy(out, e.value)
+	return out, true
+}
+
+// Set stores value for key with the given TTL. Non-positive TTL is a no-op.
+func (c *TTLCache) Set(key string, value []byte, ttl time.Duration) {
+	if ttl <= 0 {
+		return
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.store == nil {
+		c.store = make(map[string]*ttlEntry)
+	}
+
+	valCopy := make([]byte, len(value))
+	copy(valCopy, value)
+	c.store[key] = &ttlEntry{value: valCopy, expiresAt: time.Now().Add(ttl)}
+}
