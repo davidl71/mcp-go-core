@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Performance optimizations documentation
 
+## [0.4.3] - 2026-03-29
+
+### Added
+- **`pkg/mcp/response`:** `FormatResultCompact` — compact JSON plus optional `output_path` file write (same behavior as indented `FormatResult`).
+- **`pkg/mcp/framework`:** `ErrToolFailed` with `Unwrap`, and `IsToolFailed` for `errors.As` / tooling.
+
 ## [0.3.0] - 2026-01-12
 
 ### Added

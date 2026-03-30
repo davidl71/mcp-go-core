@@ -134,6 +134,24 @@ func TestErrTransport(t *testing.T) {
 	}
 }
 
+func TestErrToolFailed(t *testing.T) {
+	inner := errors.New("something broke")
+	err := &ErrToolFailed{ToolName: "my_tool", Err: inner}
+	if got, want := err.Error(), "my_tool failed: something broke"; got != want {
+		t.Errorf("Error() = %q, want %q", got, want)
+	}
+	if err.Unwrap() != inner {
+		t.Error("Unwrap() should return inner error")
+	}
+	if !IsToolFailed(err) {
+		t.Error("IsToolFailed() should be true")
+	}
+	wrapped := fmt.Errorf("outer: %w", err)
+	if !IsToolFailed(wrapped) {
+		t.Error("IsToolFailed() should be true for wrapped ErrToolFailed")
+	}
+}
+
 func TestErrContextCancelled(t *testing.T) {
 	t.Run("with nil Err", func(t *testing.T) {
 		err := &ErrContextCancelled{Err: nil}

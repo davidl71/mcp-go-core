@@ -63,20 +63,49 @@ func FormatResult(result map[string]interface{}, outputPath string) ([]types.Tex
 	// Write to file if outputPath is provided
 	if outputPath != "" {
 		if err := os.WriteFile(outputPath, output, 0644); err == nil {
+			written := append([]byte(nil), output...)
 			// File written successfully - add output_path to result
 			result["output_path"] = outputPath
 			// Re-marshal with output_path included
-			output, err = json.MarshalIndent(result, "", "  ")
-			if err != nil {
-				// If re-marshaling fails, return original output
-				// (output_path was added but couldn't be included in JSON)
+			newOut, err2 := json.MarshalIndent(result, "", "  ")
+			if err2 != nil {
+				// If re-marshaling fails, return JSON as written to disk
 				return []types.TextContent{
-					{Type: "text", Text: string(output)},
+					{Type: "text", Text: string(written)},
 				}, nil
 			}
+			output = newOut
 		}
 		// If file write fails, continue without output_path
 		// (don't fail the entire operation)
+	}
+
+	return []types.TextContent{
+		{Type: "text", Text: string(output)},
+	}, nil
+}
+
+// FormatResultCompact formats a result map as compact JSON (no extra whitespace)
+// and optionally writes the same bytes to outputPath when non-empty.
+// On successful write, result["output_path"] is set and the response JSON is re-marshaled.
+func FormatResultCompact(result map[string]interface{}, outputPath string) ([]types.TextContent, error) {
+	output, err := json.Marshal(result)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	if outputPath != "" {
+		if err := os.WriteFile(outputPath, output, 0o644); err == nil {
+			written := append([]byte(nil), output...)
+			result["output_path"] = outputPath
+			newOut, err2 := json.Marshal(result)
+			if err2 != nil {
+				return []types.TextContent{
+					{Type: "text", Text: string(written)},
+				}, nil
+			}
+			output = newOut
+		}
 	}
 
 	return []types.TextContent{

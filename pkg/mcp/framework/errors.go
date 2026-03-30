@@ -81,6 +81,36 @@ func (e *ErrTransport) Error() string {
 	return fmt.Sprintf("transport: %s", e.Reason)
 }
 
+// ErrToolFailed wraps an error returned from a named MCP tool handler.
+// Use errors.Is/As on the result; Unwrap returns the underlying error.
+type ErrToolFailed struct {
+	ToolName string
+	Err      error
+}
+
+func (e *ErrToolFailed) Error() string {
+	if e == nil {
+		return "tool failed: <nil>"
+	}
+	if e.Err == nil {
+		return fmt.Sprintf("%s failed", e.ToolName)
+	}
+	return fmt.Sprintf("%s failed: %v", e.ToolName, e.Err)
+}
+
+func (e *ErrToolFailed) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return e.Err
+}
+
+// IsToolFailed reports whether err unwraps to *ErrToolFailed.
+func IsToolFailed(err error) bool {
+	var target *ErrToolFailed
+	return errors.As(err, &target)
+}
+
 // ErrContextCancelled represents context cancelled or nil
 type ErrContextCancelled struct {
 	Err error

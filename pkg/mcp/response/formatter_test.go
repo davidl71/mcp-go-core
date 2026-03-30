@@ -193,6 +193,45 @@ func TestFormatResult_NestedStructures(t *testing.T) {
 	}
 }
 
+func TestFormatResultCompact_NoIndent(t *testing.T) {
+	result := map[string]interface{}{
+		"success": true,
+		"method":  "native_go",
+	}
+	contents, err := FormatResultCompact(result, "")
+	if err != nil {
+		t.Fatalf("FormatResultCompact() error = %v", err)
+	}
+	text := contents[0].Text
+	if strings.Contains(text, "\n  ") {
+		t.Errorf("compact output should not contain indented newlines: %q", text)
+	}
+	var parsed map[string]interface{}
+	if err := json.Unmarshal([]byte(text), &parsed); err != nil {
+		t.Fatalf("not valid JSON: %v", err)
+	}
+}
+
+func TestFormatResultCompact_WithFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	outputPath := filepath.Join(tmpDir, "out.json")
+	result := map[string]interface{}{"ok": true}
+	contents, err := FormatResultCompact(result, outputPath)
+	if err != nil {
+		t.Fatalf("FormatResultCompact() error = %v", err)
+	}
+	if result["output_path"] != outputPath {
+		t.Errorf("output_path not set on result map")
+	}
+	var parsed map[string]interface{}
+	if err := json.Unmarshal([]byte(contents[0].Text), &parsed); err != nil {
+		t.Fatal(err)
+	}
+	if parsed["output_path"] != outputPath {
+		t.Errorf("JSON missing output_path")
+	}
+}
+
 func TestFormatResult_Indentation(t *testing.T) {
 	result := map[string]interface{}{
 		"key1": "value1",
